@@ -2,8 +2,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
 import os
-import subprocess
-import sys
+import runpy
 
 
 class HealthHandler(BaseHTTPRequestHandler):
@@ -23,15 +22,10 @@ if __name__ == "__main__":
     if not bot_file.is_file():
         raise FileNotFoundError(f"Bot file not found: {bot_file}")
 
+    os.chdir(bot_dir)
     port = int(os.environ.get("PORT", os.environ.get("WEBSITES_PORT", "8000")))
     server = ThreadingHTTPServer(("0.0.0.0", port), HealthHandler)
     Thread(target=server.serve_forever, daemon=True).start()
 
-    print("Starting Telegram bot...", flush=True)
-    bot = subprocess.Popen([sys.executable, str(bot_file)], cwd=str(bot_dir))
-    try:
-        exit_code = bot.wait()
-    finally:
-        server.shutdown()
-        server.server_close()
-    raise SystemExit(exit_code)
+    print(f"Starting Telegram bot from {bot_file}...", flush=True)
+    runpy.run_path(str(bot_file), run_name="__main__")
