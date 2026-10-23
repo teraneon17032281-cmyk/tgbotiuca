@@ -16,12 +16,11 @@ from aiogram.types import (
     KeyboardButton,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
-    WebAppInfo,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # =====================================================================
-# НАСТРОЙКИ (Ваш токен уже проставлен или замените при необходимости)
+# НАСТРОЙКИ
 # =====================================================================
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 if not BOT_TOKEN:
@@ -151,12 +150,6 @@ def get_free_rooms(day_idx: int, slot: str) -> tuple[list[str], list[str]]:
 def main_menu_kb(user_group: str | None = None) -> ReplyKeyboardMarkup:
     grp_label = f"🎓 Группа: {user_group}" if user_group else "🎓 Выбрать группу"
     kb = [
-        [
-            KeyboardButton(
-                text="📱 Мини-приложение (Сайт)",
-                web_app=WebAppInfo(url="https://schedule-mocha-eight.vercel.app/")
-            )
-        ],
         [KeyboardButton(text="📅 Сегодня"), KeyboardButton(text="📆 Завтра")],
         [KeyboardButton(text="🗓 Расписание по дням"), KeyboardButton(text="🟢 Свободные кабинеты")],
         [KeyboardButton(text="👨‍🏫 Поиск преподавателя"), KeyboardButton(text="🚪 Расписание кабинета")],
@@ -226,8 +219,7 @@ async def cmd_start(message: Message, state: FSMContext):
     grp = get_user_group(message.from_user.id)
     text = (
         "👋 <b>Добро пожаловать в расписание IUCA!</b>\n\n"
-        "Используйте удобные кнопки навигации внизу экрана 👇\n"
-        "Вы можете открыть полноценное <b>Мини-приложение (сайт)</b> или пользоваться текстовым меню."
+        "Используйте кнопки навигации внизу экрана 👇"
     )
     await message.answer(text, reply_markup=main_menu_kb(grp), parse_mode="HTML")
     if not grp:
@@ -273,7 +265,6 @@ async def cb_set_group(call: CallbackQuery):
         reply_markup=days_inline_kb(grp, show_day),
         parse_mode="HTML",
     )
-    # Обновляем главное меню у пользователя с новой группой
     await call.message.answer("Меню обновлено 👇", reply_markup=main_menu_kb(grp))
     await call.answer(f"Выбрана группа {grp}")
 
@@ -510,7 +501,7 @@ async def main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
     dp.include_router(router)
-    print("🚀 Бот расписания IUCA с Mini App запущен!")
+    print("🚀 Бот расписания IUCA запущен!")
     await dp.start_polling(bot)
 
 
