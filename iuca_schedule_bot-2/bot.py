@@ -26,6 +26,8 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 if not BOT_TOKEN:
     raise RuntimeError("BOT_TOKEN environment variable is not set")
 
+ADMIN_USERNAME = "hitbox3d"
+
 SCHEDULE_FILE = Path(__file__).parent / "schedule.json"
 USERS_FILE = Path(__file__).parent / "users.json"
 
@@ -67,6 +69,17 @@ def load_users() -> dict:
         except Exception:
             return {}
     return {}
+
+
+def register_user(user_id: int):
+    users = load_users()
+    users.setdefault(str(user_id), None)
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
+
+def is_admin(username: str | None) -> bool:
+    return bool(username and username.casefold() == ADMIN_USERNAME.casefold())
 
 
 def save_user_group(user_id: int, group: str):
@@ -147,7 +160,7 @@ def get_free_rooms(day_idx: int, slot: str) -> tuple[list[str], list[str]]:
 # =====================================================================
 # НИЖНЯЯ КЛАВИАТУРА ИНТЕРФЕЙСА (REPLY KEYBOARD)
 # =====================================================================
-def main_menu_kb(user_group: str | None = None) -> ReplyKeyboardMarkup:
+def main_menu_kb(user_group: str | None = None, admin: bool = False) -> ReplyKeyboardMarkup:
     grp_label = f"🎓 Группа: {user_group}" if user_group else "🎓 Выбрать группу"
     kb = [
         [KeyboardButton(text="📅 Сегодня"), KeyboardButton(text="📆 Завтра")],
@@ -155,6 +168,8 @@ def main_menu_kb(user_group: str | None = None) -> ReplyKeyboardMarkup:
         [KeyboardButton(text="👨‍🏫 Поиск преподавателя"), KeyboardButton(text="🚪 Расписание кабинета")],
         [KeyboardButton(text=grp_label)],
     ]
+    if admin:
+        kb.append([KeyboardButton(text="🛠 Админка")])
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True, persistent=True)
 
 
@@ -216,14 +231,25 @@ router = Router()
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
+    register_user(message.from_user.id)
     grp = get_user_group(message.from_user.id)
+    admin = is_admin(message.from_user.username)
     text = (
         "👋 <b>Добро пожаловать в расписание IUCA!</b>\n\n"
-        "Используйте кнопки навигации внизу экрана 👇"
+        "Используйте кнопки навигации внизу экрана 👇\n"
+        "Создатель: @hitbox3d"
     )
-    await message.answer(text, reply_markup=main_menu_kb(grp), parse_mode="HTML")
+    await message.answer(text, reply_markup=main_menu_kb(grp, admin=admin), parse_mode="HTML")
     if not grp:
         await message.answer("👇 Сначала выберите своё направление:", reply_markup=faculties_kb())
+
+
+@router.message(F.text == "🛠 Админка")
+async def admin_panel(message: Message):
+    if not is_admin(message.from_user.username):
+        return
+    users = load_users()
+    await message.answer(f"👥 Пользователей, запустивших бота: <b>{len(users)}</b>", parse_mode="HTML")
 
 
 @router.message(F.text.startswith("🎓"))
@@ -265,7 +291,7 @@ async def cb_set_group(call: CallbackQuery):
         reply_markup=days_inline_kb(grp, show_day),
         parse_mode="HTML",
     )
-    await call.message.answer("Меню обновлено 👇", reply_markup=main_menu_kb(grp))
+    await call.message.answer("Меню обновлено 👇", reply_markup=main_menu_kb(grp, admin=is_admin(call.from_user.username)))
     await call.answer(f"Выбрана группа {grp}")
 
 
@@ -274,7 +300,7 @@ async def show_today_tomorrow(message: Message, state: FSMContext):
     await state.clear()
     grp = get_user_group(message.from_user.id)
     if not grp:
-        await message.answer("Сначала выберите свою группу кнопкой в меню 👇", reply_markup=main_menu_kb(None))
+        await message.answer("Сначала выберите свою группу кнопкой в меню 👇", reply_markup=main_menu_kb(None, admin=is_admin(message.from_user.username)))
         await message.answer("👇 Выберите направление:", reply_markup=faculties_kb())
         return
 
