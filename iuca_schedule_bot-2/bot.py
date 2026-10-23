@@ -16,6 +16,7 @@ from aiogram.types import (
     KeyboardButton,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
+    WebAppInfo,
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -167,6 +168,7 @@ def main_menu_kb(user_group: str | None = None, admin: bool = False) -> ReplyKey
         [KeyboardButton(text="🗓 Расписание по дням"), KeyboardButton(text="🟢 Свободные кабинеты")],
         [KeyboardButton(text="👨‍🏫 Поиск преподавателя"), KeyboardButton(text="🚪 Расписание кабинета")],
         [KeyboardButton(text=grp_label)],
+        [KeyboardButton(text="🟣 Открыть Moggram", web_app=WebAppInfo(url="https://moggram-a6a3cufkagdcf6b5.centralindia-01.azurewebsites.net"))],
     ]
     if admin:
         kb.append([KeyboardButton(text="🛠 Админка")])
