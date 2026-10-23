@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -22,7 +23,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 # =====================================================================
 # НАСТРОЙКИ (Ваш токен уже проставлен или замените при необходимости)
 # =====================================================================
-BOT_TOKEN = "1"  # Если здесь заглушка, замените на свой токен от BotFather
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN environment variable is not set")
 
 SCHEDULE_FILE = Path(__file__).parent / "schedule.json"
 USERS_FILE = Path(__file__).parent / "users.json"
