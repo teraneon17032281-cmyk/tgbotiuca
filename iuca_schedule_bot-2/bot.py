@@ -320,7 +320,7 @@ async def show_by_days(message: Message, state: FSMContext):
     await state.clear()
     grp = get_user_group(message.from_user.id)
     if not grp:
-        await message.answer("Сначала выберите свою группу кнопкой в меню 👇", reply_markup=main_menu_kb(None))
+        await message.answer("Сначала выберите свою группу кнопкой в меню 👇", reply_markup=main_menu_kb(None, admin=is_admin(message.from_user.username)))
         await message.answer("👇 Выберите направление:", reply_markup=faculties_kb())
         return
 
